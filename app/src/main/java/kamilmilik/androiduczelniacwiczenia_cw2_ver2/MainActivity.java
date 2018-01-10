@@ -7,9 +7,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -17,11 +20,14 @@ public class MainActivity extends AppCompatActivity {
     private  TextView whoseMoveTextView;
     private Board board;
     private int turn;
+    private SharedPreferencesOperation sharedPreferencesOperation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         newGameSetUp();
+        loadSavedStateOfGameFromSharedPref();
     }
     public void setUpTextView(){
         whoseMoveTextView = findViewById(R.id.whoseMoveTextView);
@@ -124,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
        // randomMoveAction(turn);
         if(!board.getWhoWin().isGameOver()) {
             minimaxAlgorithm.minimax(0, turn);
+            Log.i(TAG,"computerMove " + minimaxAlgorithm.getComputerMove());
             board.makeMoveToGivenPoint(minimaxAlgorithm.getComputerMove(), turn);
             int i = minimaxAlgorithm.getComputerMove().x;
             int j = minimaxAlgorithm.getComputerMove().y;
@@ -151,5 +158,61 @@ public class MainActivity extends AppCompatActivity {
         board.setUpBoardButtons();
         turn = Identifier.CROSS_INDETIFIER;
         board.initializeGame();
+    }
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.i(TAG,"onStop");
+        sharedPreferencesOperation.deleteAll();
+        sharedPreferencesOperation.saveToSharedPreferences(Identifier.SHARED_BOARD, board.getBoard());
+        sharedPreferencesOperation.saveIntToShared(Identifier.SHARED_TURN, turn);
+    }
+    public void loadSavedStateOfGameFromSharedPref(){
+        sharedPreferencesOperation = new SharedPreferencesOperation(this,Identifier.SHARED_KEY);
+        loadStateOfGame();
+        loadGameTurn();
+    }
+    private void loadGameTurn(){
+        int savedTurn = sharedPreferencesOperation.getIntFromShared(Identifier.SHARED_TURN);
+        Log.i(TAG,"saved turn " + savedTurn + " ");
+        if (savedTurn != -1) {
+            turn = savedTurn;
+        }
+    }
+    private void loadStateOfGame(){
+        Integer[][] savedStateOfGameArray = sharedPreferencesOperation.getItem(Identifier.SHARED_BOARD);
+        for(int i = 0 ; i < savedStateOfGameArray.length;i++){
+            for(int j = 0 ; j < savedStateOfGameArray[0].length;j++){
+                Log.i(TAG,"boardState: " + savedStateOfGameArray[i][j]);
+            }
+        }
+        if(savedStateOfGameArray != null ) {
+            for(int i = 0 ; i < savedStateOfGameArray.length;i++){
+                for(int j = 0 ; j < savedStateOfGameArray[0].length;j++) {
+                    if (savedStateOfGameArray[i][j] != null) {
+                        int whichPlayerHasMoveInPostition = savedStateOfGameArray[i][j];
+                        if (whichPlayerHasMoveInPostition == Identifier.CROSS_INDETIFIER) {
+                            board.getBoardButtons()[i][j].setBackground(getResources().getDrawable(R.drawable.cross));
+                        }
+                        if (whichPlayerHasMoveInPostition == Identifier.CIRCLE_INDETIFIER) {
+                            board.getBoardButtons()[i][j].setBackground(getResources().getDrawable(R.drawable.circle));
+                        }
+                        board.makeMoveToGivenPoint(new Point(i, j), whichPlayerHasMoveInPostition);
+                    }
+                }
+            }
+//            for (int index = 0; index < savedStateOfGameArray.size(); index++) {
+//                int value = savedStateOfGameArray.get(index);
+//                Button button = viewLayout.findViewWithTag(String.valueOf(index));
+//                if (value == Identifier.CROSS_INDETIFIER) {
+//                    button.setBackground(this.getResources().getDrawable(R.drawable.circle));
+//                } else if (value == Identifier.CIRCLE_INDETIFIER) {
+//                    button.setBackground(this.getResources().getDrawable(R.drawable.cross));
+//                }
+//                board.setGameState(index, value);
+//            }
+        }
     }
 }

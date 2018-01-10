@@ -69,6 +69,9 @@ public class MinimaxAlgorithm {
                 if (i == pointsAvailable.size() - 1 && min < 0) {
                     if (depth == 0) computerMove = point;
                 }
+                if (i == 0 && min > 0) {
+                    if (depth == 0) computerMove = point;
+                }
             }
             board.makeMoveToGivenPoint(point,Identifier.BLANK_IDENTIFIER);//Reset this point
         }
